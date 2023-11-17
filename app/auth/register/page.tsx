@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import StaggerChildren, { childVariants } from "@/animations/staggerChildren";
 import { registerUser } from "@/services";
 import AuthLayout from "@/layout/authLayout";
+import { Heading } from "@/components/ui/heading";
 
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
@@ -35,9 +36,9 @@ export default function SignUp() {
 
   return (
     <AuthLayout>
-      <div>SignUp</div>
+      <Heading title="Sign Up" description="create an account to get started" />
 
-      <form onSubmit={handleSubmit} className=" flex flex-col gap-2 ">
+      <form onSubmit={handleSubmit} className=" flex flex-col gap-2 mt-5">
         <StaggerChildren>
           <motion.div variants={childVariants} className="">
             <TextField

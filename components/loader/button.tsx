@@ -7,7 +7,7 @@ const ButtonLoader = (white: Props) => {
     <div className="w-full flex justify-center items-center">
       <svg
         className={`${
-          white ? "text-black" : "text-black"
+          white ? "text-white" : "text-white"
         } w-6 h-6  animate-spin`}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
