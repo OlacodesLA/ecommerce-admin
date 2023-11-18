@@ -24,6 +24,7 @@ import useMounted from "@/utils";
 import { getFirebaseErrorMessage } from "@/utils/errorHandler";
 import { usersCollectionRef } from "@/utils/users";
 import postToken from "@/lib/post-token";
+import { clientAuth } from "@/lib/firebase-client";
 
 export const registerUser = async (
   values: IRegistrationValues,
@@ -80,13 +81,7 @@ export const loginUser = async (
       await postToken(cred.user);
     }
 
-    if (cred.user) {
-      setIsLoading(false);
-      toast.success("Successfully Logged In");
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
-    } else {
+    if (!cred.user) {
       setIsLoading(false);
     }
   } catch (error: any) {
@@ -96,7 +91,11 @@ export const loginUser = async (
     toast.error(errorMessage);
     setIsLoading(false);
   } finally {
-    router.push("/");
+    setIsLoading(false);
+    toast.success("Successfully Logged In");
+    setTimeout(() => {
+      router.push("/");
+    }, 2000);
   }
 };
 
@@ -116,47 +115,51 @@ export const logoutUser = async (router: AppRouterInstance) => {
       }
     };
 
-    handleLogout();
+    await signOut(clientAuth);
+    await handleLogout();
 
     router.refresh();
   } catch (error) {
     console.error(error);
 
     return error;
+  } finally {
+    toast.success("Logged Out Successfully");
   }
 };
 
-export const loginWithGoogle = (router: AppRouterInstance) => {
+export const loginWithGoogle = async (router: AppRouterInstance) => {
   const provider = new GoogleAuthProvider();
 
-  signInWithPopup(auth as Auth, provider)
-    .then((cred) => {
-      if (cred) {
-        postToken(cred.user);
-      }
+  try {
+    const cred = (await signInWithPopup(auth as Auth, provider)) as any;
 
-      // if (cred.user) {
-      //   setCookie("auth", "true", {
-      //     maxAge: 30 * 24 * 60 * 60,
-      //     path: "/",
-      //   });
-      // }
-      // setCookie("userId", cred.user.uid, {
-      //   maxAge: 30 * 24 * 60 * 60,
-      //   path: "/",
-      // });
-      toast.success("Successfully Logged In");
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
-      console.log(cred);
-    })
-    .catch((error) => {
-      console.error(error.message);
-      const errorMessage = getFirebaseErrorMessage(error.code);
-      toast.error(errorMessage);
-      return error;
-    });
+    if (cred.user) {
+      await postToken(cred.user);
+      console.log("LOGIN", cred.user);
+      const userDoc = doc(usersCollectionRef, cred.user.uid);
+      // Set the user
+      const [firstName, lastName] = cred.user.displayName.split(" ");
+      await setDoc(userDoc, {
+        email: cred.user.email,
+        firstName,
+        lastName,
+        userId: cred.user.uid,
+        picture: cred.user.photoURL,
+      });
+    }
+    console.log("GOOGLE LOG IN", cred);
+  } catch (error: any) {
+    console.error(error.message);
+    const errorMessage = getFirebaseErrorMessage(error.code);
+    toast.error(errorMessage);
+    return error;
+  } finally {
+    toast.success("Successfully Logged In");
+    setTimeout(() => {
+      router.push("/");
+    }, 2000);
+  }
 };
 
 export const resetUserPassword = (

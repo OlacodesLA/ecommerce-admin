@@ -1,5 +1,5 @@
 import { clientAuth } from "@/lib/firebase-client";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { signOut } from "firebase/auth";
 
 //Post client ID token to server
@@ -16,10 +16,10 @@ export default async function postToken(user: any) {
       Authorization: `Bearer ${token}`,
     },
   });
-  console.log(res.status);
   if (res.status === 200) {
     //logging out of client side auth is very important as if you didnt you could just log back into the server
-    // signOut(clientAuth);
+    // await signOut(clientAuth);
     // location.reload();
+    window.location.assign("/");
   }
 }

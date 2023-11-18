@@ -65,6 +65,8 @@ const AvatarComp = ({ user }: any) => {
     }
   }, [user]);
 
+  console.log("AVATAR", user);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

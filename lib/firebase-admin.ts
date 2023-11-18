@@ -12,7 +12,6 @@ const firebaseAdminConfig = {
   }),
 };
 
-console.log(serviceAccount.private_key);
 const app =
   getApps().length <= 0 ? initializeApp(firebaseAdminConfig) : getApps()[0];
 

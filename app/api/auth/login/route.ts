@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     NextResponse.redirect(new URL("/", req.url));
+    NextResponse.redirect(new URL("/", req.url));
 
     return new NextResponse("User authenticated", {
       status: 200,
