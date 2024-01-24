@@ -191,23 +191,73 @@ export const getBillboardsByStoreId = async (
   }
 };
 
-export async function getProductsByParams(storeId: any, criteria: any) {
-  const productsCollection = collection(db, "product");
-  let productsQuery = query(
-    productsCollection,
-    where("storeId", "==", storeId),
-    orderBy("createdAt", "desc")
+export async function getProductsByParams(
+  storeId: string,
+  criteria: {
+    categoryId?: string;
+    colorId?: string[];
+    sizeId?: string[];
+    isFeatured?: boolean;
+  }
+) {
+  const productsCollectionRef = collection(db, "product");
+  const categoriesCollectionRef = collection(db, "category");
+
+  let baseQuery = query(productsCollectionRef, where("storeId", "==", storeId));
+
+  if (criteria.categoryId) {
+    baseQuery = query(
+      baseQuery,
+      where("categoryId", "==", criteria.categoryId)
+    );
+  }
+
+  // Separate queries for colorId and sizeId
+  const colorQuery =
+    criteria.colorId && criteria.colorId.length > 0
+      ? query(
+          baseQuery,
+          where("colorId", "array-contains-any", criteria.colorId)
+        )
+      : baseQuery;
+
+  const sizeQuery =
+    criteria.sizeId && criteria.sizeId.length > 0
+      ? query(baseQuery, where("sizeId", "array-contains-any", criteria.sizeId))
+      : baseQuery;
+
+  // Execute both color and size queries and store the results
+  const querySnapshotColor = await getDocs(colorQuery);
+  const querySnapshotSize = await getDocs(sizeQuery);
+
+  // Find common products between color and size queries
+  const commonProducts = querySnapshotColor.docs.filter((colorDoc) =>
+    querySnapshotSize.docs.some((sizeDoc) => sizeDoc.id === colorDoc.id)
   );
 
-  Object.entries(criteria).forEach(([key, value]) => {
-    if (value !== undefined && !(key === "isFeatured" && value === false)) {
-      productsQuery = query(productsQuery, where(key, "==", value));
-    }
+  // Extract and return the common products with IDs as an array
+  const products: any[] = commonProducts.map((docSnapshot) => {
+    const productData = docSnapshot.data() as any;
+    return { id: docSnapshot.id, ...productData };
   });
 
-  const productsSnapshot = await getDocs(productsQuery);
+  // Fetch category details if categoryId is present
+  for (const productData of products) {
+    if (productData.categoryId) {
+      const categoryDocRef = doc(
+        categoriesCollectionRef,
+        productData.categoryId
+      );
+      const categoryDocSnapshot = await getDoc(categoryDocRef);
 
-  return productsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      if (categoryDocSnapshot.exists()) {
+        const categoryData = categoryDocSnapshot.data() as any;
+        productData.category = categoryData;
+      }
+    }
+  }
+
+  return products;
 }
 
 export async function getDocumentData(

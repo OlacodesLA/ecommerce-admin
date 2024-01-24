@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { adminAuth } from "@/lib/firebase-admin";
 import {
@@ -53,8 +53,8 @@ export async function POST(
       storeId: params.storeId,
       // store: doc(db, "store", params.storeId),
       userId: user.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     // Get the ID of the newly created document
@@ -85,7 +85,7 @@ export async function GET(
 
     const colors = await getBillboardsByStoreId("color", params.storeId);
 
-    return NextResponse.json(colors);
+    return NextResponse.json(colors, { status: 200 });
   } catch (error) {
     console.error("[COLORS_GET]", error);
     return new NextResponse("Internal error", { status: 500 });

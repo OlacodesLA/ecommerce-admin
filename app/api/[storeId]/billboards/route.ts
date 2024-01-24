@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { adminAuth } from "@/lib/firebase-admin";
 import {
@@ -25,7 +25,7 @@ export async function POST(
     if (!label) {
       return new NextResponse("Name is Required", { status: 400 });
     }
-    if (!imageUrl) {
+    if (!imageUrl || !imageUrl.length) {
       return new NextResponse("Image URL is Required", { status: 400 });
     }
 
@@ -53,8 +53,8 @@ export async function POST(
       storeId: params.storeId,
       // store: doc(db, "store", params.storeId),
       userId: user.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     // Get the ID of the newly created document

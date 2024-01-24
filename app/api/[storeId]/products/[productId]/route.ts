@@ -4,8 +4,8 @@ import {
   arrayUnion,
   deleteDoc,
   doc,
-  serverTimestamp,
   updateDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import {
@@ -22,12 +22,43 @@ export async function GET(
       return new NextResponse("Product id is required", { status: 400 });
     }
 
-    const collectionName = "product";
+    const productCollectionName = "product";
+    const colorCollectionName = "color";
+    const categoryCollectionName = "category";
+    const sizeCollectionName = "size";
+
     const documentId = params.productId;
 
-    const product = await getFirstPublicDocument(collectionName, documentId);
+    // Get the product document
+    const product = await getFirstPublicDocument(
+      productCollectionName,
+      documentId
+    );
 
-    return NextResponse.json(product, { status: 200 });
+    if (!product) {
+      return new NextResponse("Product not found", { status: 404 });
+    }
+
+    // Fetch additional data for colors
+    // const colorDoc = await getDoc(doc(db, colorCollectionName, product.color));
+    // const color = colorDoc.exists() ? colorDoc.data() : null;
+
+    // Fetch additional data for categoryId
+    // const categoryDoc = await getDoc(
+    //   doc(db, categoryCollectionName, product.categoryId)
+    // );
+    // const category = categoryDoc.exists() ? categoryDoc.data() : null;
+
+    // Fetch additional data for sizes
+    // const sizeDoc = await getDoc(doc(db, sizeCollectionName, product.sizes));
+    // const size = sizeDoc.exists() ? sizeDoc.data() : null;
+
+    // Combine the product data with additional data
+    const responseData = {
+      ...product,
+    };
+
+    return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
     console.error("[PRODUCT_GET]", error);
     return new NextResponse("Internal error", { status: 500 });
@@ -45,10 +76,13 @@ export async function PATCH(
     const {
       name,
       price,
+      // quantity,
+      description,
       categoryId,
       colorId,
       sizeId,
       images,
+      items,
       isFeatured,
       isArchived,
     } = body;
@@ -67,10 +101,19 @@ export async function PATCH(
     if (!categoryId) {
       return new NextResponse("Category Id is Required", { status: 400 });
     }
-    if (!colorId) {
+    if (!colorId || !colorId.length) {
       return new NextResponse("Color Id is Required", { status: 400 });
     }
-    if (!sizeId) {
+    // if (!quantity) {
+    //   return new NextResponse("Quantity is Required", { status: 400 });
+    // }
+    if (!description) {
+      return new NextResponse("Description is Required", { status: 400 });
+    }
+    if (!sizeId || !sizeId.length) {
+      return new NextResponse("Size Id Required", { status: 400 });
+    }
+    if (!items || !items.length) {
       return new NextResponse("Size Id Required", { status: 400 });
     }
     if (!images || !images.length) {
@@ -103,10 +146,11 @@ export async function PATCH(
       categoryId,
       colorId,
       sizeId,
+      items,
       isFeatured,
       isArchived,
       images: arrayUnion(...images),
-      updatedAt: serverTimestamp(),
+      updatedAt: new Date(),
     };
 
     const docRef = doc(db, collectionName, documentId);

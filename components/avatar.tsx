@@ -71,7 +71,7 @@ const AvatarComp = ({ user }: any) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar>
-          <AvatarImage src={user.picture} />
+          <AvatarImage src={user?.picture} />
           <AvatarFallback>{initial}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -86,7 +86,7 @@ const AvatarComp = ({ user }: any) => {
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Mail className="mr-2 h-4 w-4" />
-            <span>{user.email}</span>
+            <span>{user?.email}</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

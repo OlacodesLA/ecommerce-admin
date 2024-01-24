@@ -1,6 +1,6 @@
 import getUser from "@/lib/get-user";
 import { NextResponse } from "next/server";
-import { deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import {
   getFirstDocument,
@@ -73,7 +73,7 @@ export async function PATCH(
     const updatedData = {
       label,
       imageUrl,
-      updatedAt: serverTimestamp(),
+      updatedAt: new Date(),
     };
 
     const docRef = doc(db, collectionName, documentId);

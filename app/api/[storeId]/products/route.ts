@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { adminAuth } from "@/lib/firebase-admin";
 import {
@@ -21,10 +21,13 @@ export async function POST(
     const {
       name,
       price,
+      // quantity,
+      description,
       categoryId,
       colorId,
       sizeId,
       images,
+      items,
       isFeatured,
       isArchived,
     } = body;
@@ -44,10 +47,19 @@ export async function POST(
     if (!categoryId) {
       return new NextResponse("Category Id is Required", { status: 400 });
     }
-    if (!colorId) {
+    if (!colorId || !colorId.length) {
       return new NextResponse("Color Id is Required", { status: 400 });
     }
-    if (!sizeId) {
+    // if (!quantity) {
+    //   return new NextResponse("Quantity is Required", { status: 400 });
+    // }
+    if (!description) {
+      return new NextResponse("Description is Required", { status: 400 });
+    }
+    if (!sizeId || !sizeId.length) {
+      return new NextResponse("Size Id Required", { status: 400 });
+    }
+    if (!items || !items.length) {
       return new NextResponse("Size Id Required", { status: 400 });
     }
     if (!images || !images.length) {
@@ -81,11 +93,14 @@ export async function POST(
       categoryId,
       sizeId,
       storeId: params.storeId,
+      items,
       // store: doc(db, "store", params.storeId),
+      // quantity,
+      description,
       images,
       userId: user.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     // Get the ID of the newly created document
@@ -111,8 +126,8 @@ export async function GET(
 
     const criteria = {
       categoryId: searchParams.get("categoryId") || undefined,
-      colorId: searchParams.get("colorId") || undefined,
-      sizeId: searchParams.get("sizeId") || undefined,
+      colorId: searchParams.getAll("colorId") || undefined,
+      sizeId: searchParams.getAll("sizeId") || undefined,
       isFeatured: searchParams.get("isFeatured") === "true" || undefined,
     };
 
@@ -123,9 +138,7 @@ export async function GET(
     const products = await getProductsByParams(params.storeId, criteria);
     console.log(products);
 
-    const enhancedProducts = await enhanceProductData(products);
-
-    return NextResponse.json(enhancedProducts);
+    return NextResponse.json(products);
   } catch (error) {
     console.error("[PRODUCTS_GET]", error);
     return new NextResponse("Internal error", { status: 500 });

@@ -27,7 +27,7 @@ const Navbar = async () => {
           <MainNav className="mx-6" />
         </div>
         <div className="">
-          <AvatarComp user={me} />
+          <AvatarComp user={user} />
         </div>
       </div>
     </div>

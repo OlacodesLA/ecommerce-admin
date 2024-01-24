@@ -43,16 +43,35 @@ import {
   patchProduct,
   postProduct,
 } from "@/axios/endpoints/product.endpoint";
+import { Textarea } from "@/components/ui/textarea";
+
+const itemSchema = z.object({
+  quantity: z.number().int(),
+  size: z.string(),
+  color: z.string(),
+  sizeValue: z.string(),
+  colorValue: z.string(),
+});
 
 const formSchema = z.object({
   name: z.string().min(1),
   images: z.array(z.string()),
   price: z.coerce.number().min(1),
   categoryId: z.string().min(1),
-  colorId: z.string().min(1),
-  sizeId: z.string().min(1),
+  sizeId: z.array(z.string()),
+  colorId: z.array(z.string()),
   isFeatured: z.boolean().default(false).optional(),
   isArchived: z.boolean().default(false).optional(),
+  description: z
+    .string()
+    .min(10, {
+      message: "Description must be at least 10 characters.",
+    })
+    .max(160, {
+      message: "Description must not be longer than 30 characters.",
+    }),
+
+  items: z.array(itemSchema),
 });
 
 interface ProductFormProps {
@@ -75,7 +94,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const origin = useOrigin();
 
   const title = initialData ? "Edit product" : "Create product";
-
   const description = initialData ? "Edit a product" : "Add a new product";
   const toastMessage = initialData ? "Product Updated" : "Product Created";
   const action = initialData ? "Save changes" : "Create";
@@ -86,14 +104,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       ? {
           ...initialData,
           price: parseFloat(String(initialData?.price)),
+          items: initialData?.items || [],
         }
       : {
           name: "",
           images: [],
           price: 0,
           categoryId: "",
-          sizeId: "",
-          colorId: "",
+          description: "",
+          sizeId: [],
+          colorId: [],
+          items: [],
           isFeatured: false,
           isArchived: false,
         },
@@ -108,13 +129,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         await postProduct(params.storeId, data);
       }
       router.refresh();
-      router.push(`/${params.storeId}/products`);
+      console.log(data);
+      // router.push(`/${params.storeId}/products`);
       toast.success(toastMessage);
     } catch (error) {
       toast.error("Something went wrong");
+      console.error(error);
     } finally {
       setLoading(false);
     }
+    console.log(data);
   };
 
   const onDelete = async () => {
@@ -130,6 +154,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       setLoading(false);
       setOpen(false);
     }
+  };
+
+  const addItem = () => {
+    const newItems = [
+      ...form.getValues("items"),
+      { quantity: 0, size: "", color: "", sizeValue: "", colorValue: "" },
+    ];
+    form.setValue("items", newItems, { shouldDirty: true });
+  };
+
+  const removeItem = (index: number) => {
+    const currentItems = form.getValues("items");
+    currentItems.splice(index, 1);
+    form.setValue("items", currentItems, { shouldDirty: true });
   };
 
   return (
@@ -223,6 +261,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="categoryId"
@@ -255,66 +294,22 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="sizeId"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Size</FormLabel>
-                  <Select
-                    disabled={loading}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          defaultValue={field.value}
-                          placeholder="Select a size"
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {sizes.map((size: any) => (
-                        <SelectItem key={size.id} value={size.id}>
-                          {size.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="colorId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Color</FormLabel>
-                  <Select
-                    disabled={loading}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          defaultValue={field.value}
-                          placeholder="Select a color"
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {colors.map((color: any) => (
-                        <SelectItem key={color.id} value={color.id}>
-                          {color.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Description</FormLabel>
+
+                  <FormControl>
+                    <Textarea
+                      placeholder="Tell us a little bit about the product"
+                      className="resize-y"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>Details about the product.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -323,7 +318,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               control={form.control}
               name="isFeatured"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                <FormItem className="flex flex-row h-24 items-center space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -343,7 +338,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               control={form.control}
               name="isArchived"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                <FormItem className="flex flex-row h-24 items-center space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -356,6 +351,160 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       This product will not appear anywhere in the store.
                     </FormDescription>
                   </div>
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="">
+            <FormField
+              control={form.control}
+              name="items"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Items</FormLabel>
+                  <div className="flex flex-col gap-4 ">
+                    {field.value.map((item: any, index: number) => (
+                      <div key={index} className="flex items-center space-x-4">
+                        <div className="w-full">
+                          <Input
+                            type="number"
+                            placeholder="Quantity"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              console.log("Updating quantity:", e.target.value);
+                              const newItems = [...field.value];
+                              newItems[index].quantity = parseInt(
+                                e.target.value,
+                                10
+                              );
+                              form.setValue("items", newItems);
+                            }}
+                          />
+                        </div>
+                        <div className="w-full">
+                          <Select
+                            disabled={loading}
+                            onValueChange={(value) => {
+                              console.log("Updating size:", value);
+                              const newItems = [...field.value];
+                              newItems[index].size = value;
+                              const selectedValues = () => {
+                                const size = sizes.find(
+                                  (s: { name: string }) => s.name === value
+                                );
+
+                                return size ? size.value : null;
+                              };
+                              console.log(selectedValues());
+                              newItems[index].sizeValue = selectedValues();
+                              form.setValue("items", newItems);
+                              //SizeId
+                              // Accumulate selected size ids into an array
+                              const selectedSizeIds = newItems.map((item) => {
+                                const size = sizes.find(
+                                  (s: { name: string }) => s.name === item.size
+                                );
+                                return size ? size.id : null;
+                              });
+
+                              console.log("selectedSizeIds", selectedSizeIds);
+                              form.setValue(
+                                "sizeId",
+                                selectedSizeIds.filter(Boolean)
+                              );
+                            }}
+                            value={item.size}
+                            defaultValue={item.size}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue
+                                  defaultValue={item.size}
+                                  placeholder="Select a size"
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {sizes.map((size: any) => (
+                                <SelectItem key={size.id} value={size.name}>
+                                  {size.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="w-full">
+                          <Select
+                            disabled={loading}
+                            onValueChange={(value) => {
+                              console.log("Updating color:", value);
+                              const newItems = [...field.value];
+                              newItems[index].color = value;
+                              const selectedValues = () => {
+                                const color = colors.find(
+                                  (c: { name: string }) => c.name === value
+                                );
+
+                                return color ? color.value : null;
+                              };
+                              console.log(selectedValues());
+                              newItems[index].colorValue = selectedValues();
+
+                              form.setValue("items", newItems);
+
+                              // Accumulate selected color ids into an array
+                              const selectedColorIds = newItems.map((item) => {
+                                const color = colors.find(
+                                  (c: { name: string }) => c.name === item.color
+                                );
+                                return color ? color.id : null;
+                              });
+                              console.log("selectedColorIds", selectedColorIds);
+                              form.setValue(
+                                "colorId",
+                                selectedColorIds.filter(Boolean)
+                              );
+                            }}
+                            value={item.color}
+                            defaultValue={item.color}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue
+                                  defaultValue={item.color}
+                                  placeholder="Select a color"
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {colors.map((color: any) => (
+                                <SelectItem key={color.id} value={color.name}>
+                                  {color.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => removeItem(index)}
+                        >
+                          -
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      onClick={addItem}
+                      variant="secondary"
+                      type="button"
+                      className="mt-5 bg-gray-200 text-black"
+                    >
+                      Add New Item
+                    </Button>
+                  </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
