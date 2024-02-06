@@ -24,12 +24,15 @@ export async function POST(
       // quantity,
       description,
       categoryId,
+      category,
       colorId,
       sizeId,
       images,
       items,
       isFeatured,
       isArchived,
+      isNew,
+      isSeason,
     } = body;
 
     if (!value) {
@@ -89,7 +92,11 @@ export async function POST(
       price,
       isFeatured,
       isArchived,
+      isSeason,
+      isNew,
       colorId,
+      category,
+      categories: category?.map((cat: { value: string }) => cat.value),
       categoryId,
       sizeId,
       storeId: params.storeId,
@@ -125,10 +132,12 @@ export async function GET(
     const { searchParams } = new URL(req.url);
 
     const criteria = {
-      categoryId: searchParams.get("categoryId") || undefined,
+      categories: searchParams.getAll("categoryId") || undefined,
       colorId: searchParams.getAll("colorId") || undefined,
       sizeId: searchParams.getAll("sizeId") || undefined,
-      isFeatured: searchParams.get("isFeatured") === "true" || undefined,
+      isFeatured: searchParams.get("isFeatured") === "true" ? true : undefined,
+      isNew: searchParams.get("isNew") === "true" ? true : undefined,
+      isSeason: searchParams.get("isSeason") === "true" ? true : undefined,
     };
 
     if (!params.storeId) {

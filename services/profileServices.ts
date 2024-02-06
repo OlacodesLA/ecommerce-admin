@@ -194,22 +194,40 @@ export const getBillboardsByStoreId = async (
 export async function getProductsByParams(
   storeId: string,
   criteria: {
-    categoryId?: string;
+    categories?: string[]; // Changed categoryId to categories and modified type to string[]
     colorId?: string[];
     sizeId?: string[];
     isFeatured?: boolean;
+    isNew?: boolean;
+    isSeason?: boolean;
   }
 ) {
   const productsCollectionRef = collection(db, "product");
-  const categoriesCollectionRef = collection(db, "category");
 
   let baseQuery = query(productsCollectionRef, where("storeId", "==", storeId));
 
-  if (criteria.categoryId) {
+  if (criteria.categories && criteria.categories.length > 0) {
+    // Check if categories exist and have length
+    for (const categoryId of criteria.categories) {
+      baseQuery = query(
+        baseQuery,
+        where("categories", "array-contains", categoryId) // Use "array-contains" to check if categoryId is in the array of categories
+      );
+    }
+  }
+
+  if (criteria.isFeatured !== undefined) {
     baseQuery = query(
       baseQuery,
-      where("categoryId", "==", criteria.categoryId)
+      where("isFeatured", "==", criteria.isFeatured)
     );
+  }
+  if (criteria.isNew !== undefined) {
+    baseQuery = query(baseQuery, where("isNew", "==", criteria.isNew));
+  }
+
+  if (criteria.isSeason !== undefined) {
+    baseQuery = query(baseQuery, where("isSeason", "==", criteria.isSeason));
   }
 
   // Separate queries for colorId and sizeId
@@ -240,22 +258,6 @@ export async function getProductsByParams(
     const productData = docSnapshot.data() as any;
     return { id: docSnapshot.id, ...productData };
   });
-
-  // Fetch category details if categoryId is present
-  for (const productData of products) {
-    if (productData.categoryId) {
-      const categoryDocRef = doc(
-        categoriesCollectionRef,
-        productData.categoryId
-      );
-      const categoryDocSnapshot = await getDoc(categoryDocRef);
-
-      if (categoryDocSnapshot.exists()) {
-        const categoryData = categoryDocSnapshot.data() as any;
-        productData.category = categoryData;
-      }
-    }
-  }
 
   return products;
 }

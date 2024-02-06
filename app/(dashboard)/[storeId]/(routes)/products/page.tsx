@@ -13,7 +13,7 @@ const BillboardsPage = async ({ params }: { params: { storeId: string } }) => {
     `${process.env.NEXT_PUBLIC_LOCAL}/api/${params.storeId}/products`
   );
 
-  console.log(products?.data);
+  console.log("testing it man", products?.data);
 
   const formattedProducts = await products?.data?.map((item: any) => {
     // Extract sizes, colors, and quantities from items
@@ -42,7 +42,9 @@ const BillboardsPage = async ({ params }: { params: { storeId: string } }) => {
       isFeatured: item?.isFeatured,
       isArchived: item?.isArchived,
       price: formatter?.format(item?.price),
-      category: item?.category.name,
+      category: item?.category
+        .map((cat: { name: string }) => cat.name)
+        .join(", "),
       size: `${sizes}`,
       color: colors,
       quantity: totalQuantity,

@@ -44,6 +44,7 @@ import {
   postProduct,
 } from "@/axios/endpoints/product.endpoint";
 import { Textarea } from "@/components/ui/textarea";
+import { FancyMultiSelect } from "@/components/ui/fancyMultiSelect";
 
 const itemSchema = z.object({
   quantity: z.number().int(),
@@ -52,6 +53,10 @@ const itemSchema = z.object({
   sizeValue: z.string(),
   colorValue: z.string(),
 });
+const CategorySchema = z.object({
+  value: z.string(),
+  name: z.string(),
+});
 
 const formSchema = z.object({
   name: z.string().min(1),
@@ -59,8 +64,11 @@ const formSchema = z.object({
   price: z.coerce.number().min(1),
   categoryId: z.string().min(1),
   sizeId: z.array(z.string()),
+  category: z.array(CategorySchema),
   colorId: z.array(z.string()),
   isFeatured: z.boolean().default(false).optional(),
+  isNew: z.boolean().default(false).optional(),
+  isSeason: z.boolean().default(false).optional(),
   isArchived: z.boolean().default(false).optional(),
   description: z
     .string()
@@ -111,14 +119,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           images: [],
           price: 0,
           categoryId: "",
+          category: [],
           description: "",
           sizeId: [],
           colorId: [],
           items: [],
           isFeatured: false,
+          isNew: false,
+          isSeason: false,
           isArchived: false,
         },
   });
+
+  console.log(form.getValues());
 
   const onSubmit = async (data: any) => {
     try {
@@ -150,6 +163,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       toast.success("Product deleted");
     } catch (error) {
       toast.error("Something went wrong");
+      console.log(error);
     } finally {
       setLoading(false);
       setOpen(false);
@@ -243,6 +257,26 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="category" // Change the name to accept an array of strings
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <FancyMultiSelect // Use FancyMultiSelect instead of Select
+                    selected={field.value} // Pass the selected value as an array
+                    onChange={field.onChange} // Handle the onChange event
+                    options={categories.map((category: any) => ({
+                      value: category.id,
+                      name: category.name,
+                    }))} // Map categories to required format for FancyMultiSelect
+                    placeholder="Select categories" // Provide a placeholder
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="price"
@@ -329,6 +363,46 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     <FormLabel>Featured</FormLabel>
                     <FormDescription>
                       This product will appear on the home page.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="isNew"
+              render={({ field }) => (
+                <FormItem className="flex flex-row h-24 items-center space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="">
+                    <FormLabel>New Collection</FormLabel>
+                    <FormDescription>
+                      This product will appear as new collection.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="isSeason"
+              render={({ field }) => (
+                <FormItem className="flex flex-row h-24 items-center space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="">
+                    <FormLabel>Seasonal Trends </FormLabel>
+                    <FormDescription>
+                      This product will appear as seasonal collection.
                     </FormDescription>
                   </div>
                 </FormItem>

@@ -15,7 +15,16 @@ const DashboardPage: React.FC<DashboardPageProps> = async ({ params }) => {
   }
   const store = await getFirstDocument("store", user.uid, params.storeId);
 
-  return <div>Active Store {store?.name}</div>;
+  return (
+    <div className="flex flex-col justify-center item-center w-full h-full ">
+      <h1 className="text-lg font-semibold text-center text-slate-800">
+        Active Store : {store?.name}
+      </h1>
+      <div className="text-center font-bold text-2xl  uppercase">
+        Currenly under development 🏗️
+      </div>
+    </div>
+  );
 };
 
 export default DashboardPage;

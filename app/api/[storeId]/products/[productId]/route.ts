@@ -79,12 +79,16 @@ export async function PATCH(
       // quantity,
       description,
       categoryId,
+      category,
+      categories,
       colorId,
       sizeId,
       images,
       items,
       isFeatured,
       isArchived,
+      isNew,
+      isSeason,
     } = body;
 
     if (!user) {
@@ -147,7 +151,11 @@ export async function PATCH(
       colorId,
       sizeId,
       items,
+      category,
+      categories: category?.map((cat: { value: string }) => cat.value),
       isFeatured,
+      isNew,
+      isSeason,
       isArchived,
       images: arrayUnion(...images),
       updatedAt: new Date(),
