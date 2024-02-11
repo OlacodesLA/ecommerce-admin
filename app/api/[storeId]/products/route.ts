@@ -10,6 +10,15 @@ import {
   getProductsByParams,
 } from "@/services/profileServices";
 
+import algoliasearch from "algoliasearch";
+
+// Initialize Algolia search client
+const algoliaClient = algoliasearch(
+  String(process.env.NEXT_PUBLIC_ALGOLIA_APP_ID),
+  String(process.env.NEXT_PUBLIC_ALGOLIA_API_KEY)
+);
+const index = algoliaClient.initIndex("product");
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { storeId: string } }
@@ -112,6 +121,30 @@ export async function POST(
 
     // Get the ID of the newly created document
     const newDocId = newDocRef.id;
+
+    await index.saveObject({
+      objectID: newDocId, // Use the same ID as the Firebase document
+      name,
+      price,
+      isFeatured,
+      isArchived,
+      isSeason,
+      isNew,
+      colorId,
+      category,
+      categories: category?.map((cat: { value: string }) => cat.value),
+      categoryId,
+      sizeId,
+      storeId: params.storeId,
+      items,
+      // store: doc(db, "store", params.storeId),
+      // quantity,
+      description,
+      images,
+      userId: user.uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     return NextResponse.json({
       success: true,

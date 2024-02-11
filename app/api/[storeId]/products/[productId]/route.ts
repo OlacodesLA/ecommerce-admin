@@ -12,6 +12,14 @@ import {
   getFirstDocument,
   getFirstPublicDocument,
 } from "@/services/profileServices";
+import algoliasearch from "algoliasearch";
+
+// Initialize Algolia search client
+const algoliaClient = algoliasearch(
+  String(process.env.NEXT_PUBLIC_ALGOLIA_APP_ID),
+  String(process.env.NEXT_PUBLIC_ALGOLIA_API_KEY)
+);
+const index = algoliaClient.initIndex("product");
 
 export async function GET(
   req: Request,
@@ -165,6 +173,11 @@ export async function PATCH(
 
     const product = await updateDoc(docRef, updatedData);
 
+    await index.saveObject({
+      objectID: documentId,
+      ...updatedData,
+    });
+
     return NextResponse.json(
       {
         success: true,
@@ -200,6 +213,8 @@ export async function DELETE(
     const docRef = doc(db, collectionName, documentId);
 
     const product = await deleteDoc(docRef);
+
+    await index.deleteObject(documentId);
 
     return NextResponse.json(
       {
