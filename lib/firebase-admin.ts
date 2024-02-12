@@ -6,9 +6,12 @@ import serviceAccount from "@/service_account.json";
 
 const firebaseAdminConfig = {
   credential: cert({
-    privateKey: serviceAccount.private_key,
-    clientEmail: serviceAccount.client_email,
-    projectId: serviceAccount.project_id,
+    privateKey: process.env.GSUITE_PRIVATE_KEY
+      ? process.env.GSUITE_PRIVATE_KEY.replace(/\\n/gm, "\n")
+      : undefined,
+    clientEmail:
+      "firebase-adminsdk-sejap@irolagos-store.iam.gserviceaccount.com",
+    projectId: "irolagos-store",
   }),
 };
 
